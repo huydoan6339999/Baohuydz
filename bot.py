@@ -13,8 +13,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Lấy biến môi trường
-BOT_TOKEN = os.getenv("BOT_TOKEN")
-ADMIN_ID = os.getenv("ADMIN_ID")
+BOT_TOKEN = os.getenv("6320148381:AAEntoWHszOtVaRTBiPmxYNDyELNqxm-8Ag")
+ADMIN_ID = os.getenv("5736655322")
 
 # Kiểm tra và báo lỗi nếu thiếu
 if not BOT_TOKEN:
