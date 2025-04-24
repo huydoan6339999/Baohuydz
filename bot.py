@@ -7,12 +7,19 @@ from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 from apscheduler.schedulers.background import BackgroundScheduler
 from keep_alive import keep_alive  # Import keep_alive function
+from dotenv import load_dotenv  # Thêm để tải biến môi trường từ tệp .env
 
-# Thay bằng token bot Telegram của bạn
-BOT_TOKEN = "6320148381:AAF9Pv7Vn3Eqs_vM-nFAIDul2BtSp9Egxrw"
+# Tải biến môi trường
+load_dotenv()
+
+# Lấy token từ biến môi trường
+BOT_TOKEN = os.getenv("6320148381:AAF9Pv7Vn3Eqs_vM-nFAIDul2BtSp9Egxrw")
+ADMIN_ID = os.getenv("5736655322")  # ID của admin cũng được lưu trong biến môi trường
 DATA_FILE = "treo_data.json"
 USER_FILE = "users_data.json"  # File để lưu người dùng
-ADMIN_ID = "5736655322"  # Thay bằng user_id của admin
+
+# Cấu hình logging
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
 # Tải dữ liệu người dùng
 def load_users():
@@ -34,9 +41,10 @@ def is_admin(user_id):
     return str(user_id) == ADMIN_ID
 
 # Gửi cảnh báo lỗi về admin
-def send_error_to_admin(message):
-    bot = ApplicationBuilder().token(BOT_TOKEN).build().bot
-    bot.send_message(chat_id=ADMIN_ID, text=message)
+async def send_error_to_admin(message):
+    app = ApplicationBuilder().token(BOT_TOKEN).build()
+    bot = app.bot
+    await bot.send_message(chat_id=ADMIN_ID, text=message)
 
 # Kiểm tra các tên người dùng TikTok mỗi 15 phút
 def check_usernames():
@@ -47,7 +55,7 @@ def check_usernames():
         
         url = f"https://apitangfltiktok.soundcast.me/telefl.php?user={username}&userid={user_id}&tokenbot={BOT_TOKEN}"
         try:
-            res = requests.get(url, timeout=30)  # timeout sau 5 giây
+            res = requests.get(url, timeout=30)  # timeout sau 30 giây
             logging.info(f"Checked @{username} for {user_id} - Status: {res.status_code}")
         except requests.exceptions.Timeout:
             error_message = f"Timeout khi check @{username} của {user_id}"
@@ -68,6 +76,10 @@ async def add_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return await update.message.reply_text("Vui lòng nhập user_id của người dùng cần thêm. Ví dụ: /adduser <user_id>")
 
     user_id = context.args[0].strip()
+
+    # Kiểm tra user_id có hợp lệ không
+    if not user_id.isdigit():
+        return await update.message.reply_text("User ID không hợp lệ, vui lòng nhập user_id dạng số!")
 
     if user_id in users:
         return await update.message.reply_text(f"Người dùng {user_id} đã có trong danh sách.")
@@ -106,8 +118,6 @@ async def main():
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("adduser", add_user))  # Thêm lệnh /adduser
     app.add_handler(CommandHandler("listusers", list_users))  # Thêm lệnh /listusers
-    # Các lệnh khác vẫn giữ nguyên
-    # ...
 
     # Tự động kiểm tra tên người dùng mỗi 15 phút
     scheduler = BackgroundScheduler()
