@@ -10,11 +10,11 @@ from keep_alive import keep_alive  # Import keep_alive function
 from dotenv import load_dotenv  # Thêm để tải biến môi trường từ tệp .env
 
 # Tải biến môi trường
-load_dotenv()
+load_dotenv()  # Tải các biến từ .env file
 
 # Lấy token từ biến môi trường
-BOT_TOKEN = os.getenv("6320148381:AAEntoWHszOtVaRTBiPmxYNDyELNqxm-8Ag")
-ADMIN_ID = os.getenv("5736655322")  # ID của admin cũng được lưu trong biến môi trường
+BOT_TOKEN = os.getenv("BOT_TOKEN")
+ADMIN_ID = os.getenv("ADMIN_ID")  # ID của admin cũng được lưu trong biến môi trường
 DATA_FILE = "treo_data.json"
 USER_FILE = "users_data.json"  # File để lưu người dùng
 
