@@ -13,10 +13,14 @@ from dotenv import load_dotenv  # Thêm để tải biến môi trường từ t
 load_dotenv()
 
 # Lấy token từ biến môi trường
-BOT_TOKEN = os.getenv("6320148381:AAF9Pv7Vn3Eqs_vM-nFAIDul2BtSp9Egxrw")
+BOT_TOKEN = os.getenv("6320148381:AAEntoWHszOtVaRTBiPmxYNDyELNqxm-8Ag")
 ADMIN_ID = os.getenv("5736655322")  # ID của admin cũng được lưu trong biến môi trường
 DATA_FILE = "treo_data.json"
 USER_FILE = "users_data.json"  # File để lưu người dùng
+
+# Kiểm tra nếu các biến môi trường không được thiết lập
+if not BOT_TOKEN or not ADMIN_ID:
+    raise ValueError("BOT_TOKEN hoặc ADMIN_ID không được thiết lập trong môi trường!")
 
 # Cấu hình logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
