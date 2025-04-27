@@ -13,7 +13,7 @@ def get_api_response(api_url):
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
         }
-        response = requests.get(api_url, headers=headers, timeout=10, verify=False)
+        response = requests.get(api_url, headers=headers, timeout=30, verify=False)
         if response.status_code == 200 and response.text.strip():
             return response.text.strip()
         else:
