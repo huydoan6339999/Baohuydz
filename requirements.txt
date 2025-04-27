@@ -1,6 +1,4 @@
-flask
-python-telegram-bot
-apscheduler
-requests
-python-dotenv
 pyrogram
+tgcrypto
+requests
+flask
