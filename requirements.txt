@@ -3,3 +3,4 @@ python-telegram-bot
 apscheduler
 requests
 python-dotenv
+pyrogram
