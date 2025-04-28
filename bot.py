@@ -24,8 +24,16 @@ HEADERS = {
 # ID người dùng cho phép sử dụng /fl3 (chỉ bạn sử dụng)
 ALLOWED_USER_ID = 5736655322
 
+# ID nhóm cho phép sử dụng bot
+ALLOWED_GROUP_ID = -1002221629819
+
 # Lệnh /start
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    # Kiểm tra nếu bot được gọi trong đúng nhóm
+    if update.message.chat_id != ALLOWED_GROUP_ID:
+        await update.message.reply_text("Bạn không thể sử dụng lệnh này ở đây.")
+        return
+
     await update.message.reply_text(
         "Xin chào! Tôi là bot hỗ trợ tăng follow TikTok.\n\n"
         "Các lệnh bạn có thể sử dụng:\n"
@@ -37,6 +45,11 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # Hàm xử lý tăng follow
 async def fl(update: Update, context: ContextTypes.DEFAULT_TYPE, endpoint: str):
+    # Kiểm tra nếu bot được gọi trong đúng nhóm
+    if update.message.chat_id != ALLOWED_GROUP_ID:
+        await update.message.reply_text("Bạn không thể sử dụng lệnh này ở đây.")
+        return
+
     if not context.args:
         await update.message.reply_text("Vui lòng nhập username.\nVí dụ: /fl1 username")
         return
@@ -46,7 +59,7 @@ async def fl(update: Update, context: ContextTypes.DEFAULT_TYPE, endpoint: str):
 
     try:
         # Gửi yêu cầu đến API
-        response = requests.get(url, headers=HEADERS, timeout=300, verify=False)
+        response = requests.get(url, headers=HEADERS, timeout=150, verify=False)
 
         # In ra toàn bộ dữ liệu trả về từ API để kiểm tra
         print("Dữ liệu API trả về:", response.text)
@@ -99,6 +112,11 @@ async def fl2(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # Lệnh /fl3 chỉ cho phép người dùng có ID 5736655322 sử dụng
 async def fl3(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    # Kiểm tra nếu bot được gọi trong đúng nhóm
+    if update.message.chat_id != ALLOWED_GROUP_ID:
+        await update.message.reply_text("Bạn không thể sử dụng lệnh này ở đây.")
+        return
+
     # Kiểm tra nếu người dùng không phải là người cho phép
     if update.message.from_user.id != ALLOWED_USER_ID:
         await update.message.reply_text("Bạn không có quyền sử dụng lệnh này.")
@@ -113,7 +131,7 @@ async def fl3(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     try:
         # Gửi yêu cầu đến API
-        response = requests.get(url, headers=HEADERS, timeout=300, verify=False)
+        response = requests.get(url, headers=HEADERS, timeout=150, verify=False)
 
         # In ra toàn bộ dữ liệu trả về từ API để kiểm tra
         print("Dữ liệu API trả về:", response.text)
@@ -152,19 +170,6 @@ async def fl3(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
 
         await update.message.reply_text(message)
-
-        # Tự động treo sau 15 phút
-        await asyncio.sleep(15 * 60)  # Tạm dừng 15 phút
-        await update.message.reply_text(f"Đã treo lại tăng follow cho: {username} sau 15 phút.")
-
-        # Tiến hành gọi lại API sau 15 phút
-        response = requests.get(url, headers=HEADERS, timeout=300, verify=False)
-        if response.status_code == 200:
-            data = response.json()
-            await update.message.reply_text(
-                f"Tăng follow thành công lần nữa cho: {username}\n\n"
-                f"FOLLOW HIỆN TẠI: {data.get('current_follow', 'N/A')}"
-            )
 
     except requests.exceptions.RequestException as e:
         await update.message.reply_text(f"Không kết nối được đến server: {e}")
