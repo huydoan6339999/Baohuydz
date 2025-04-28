@@ -4,7 +4,7 @@ import asyncio
 from keep_alive import keep_alive  # Import keep_alive.py
 
 # Thông tin bot
-BOT_TOKEN = "6374595640:AAFw8Lo4XMiz8JhDVhA8lYMk--wcFGmRBg4"
+BOT_TOKEN = "6374595640:AAEBURXySkM_YWTI2xk988NpkIa3wQ_xNq8"
 API_ID = 27657608
 API_HASH = "3b6e52a3713b44ad5adaa2bcf579de66"
 
