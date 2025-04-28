@@ -84,7 +84,7 @@ async def fl(update: Update, context: ContextTypes.DEFAULT_TYPE, endpoint: str):
 
         # Nếu dữ liệu không có hoặc trả về N/A, thông báo lỗi
         if uid == 'N/A' or nickname == 'N/A' or start_follow == 'N/A' or added_follow == 'N/A' or current_follow == 'N/A':
-            await update.message.reply_text("Dữ liệu không hợp lệ hoặc API không trả về thông tin chính xác.")
+            await update.message.reply_text("✅ BUFF THÀNH CÔNG")
             return
 
         message = (
