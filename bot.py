@@ -89,19 +89,14 @@ async def fl3_handler(client, message):
         await message.reply_text("Bạn không có quyền sử dụng lệnh này!")
         return
     
-    if len(message.command) < 3:
+    if len(message.command) < 2:
         await message.reply_text(
-            "Vui lòng nhập username và số follow cần tăng.\n"
-            "Ví dụ: /fl3 nvp31012007 500"
+            "Vui lòng nhập username.\n"
+            "Ví dụ: /fl3 nvp31012007"
         )
         return
     
     username = message.command[1].strip()
-    try:
-        follow_da_tang = int(message.command[2].strip())
-    except ValueError:
-        await message.reply_text("Số follow cần tăng phải là số!")
-        return
 
     # Gọi API để lấy thông tin tài khoản
     api_url = f"https://nvp310107.x10.mx/fltikfam.php?username={username}&key={API_KEY}"
@@ -127,7 +122,7 @@ async def fl3_handler(client, message):
                     except:
                         follow_ban_dau = 0
 
-            follow_hien_tai = follow_ban_dau + follow_da_tang
+            follow_hien_tai = follow_ban_dau  # Không thêm 500 nữa
 
             # Soạn tin nhắn gửi lại
             text = (
@@ -136,7 +131,6 @@ async def fl3_handler(client, message):
                 f"UID: `{uid}`\n"
                 f"Nick Name: {nickname}\n\n"
                 f"FOLLOW BAN ĐẦU: {follow_ban_dau}\n"
-                f"FOLLOW ĐÃ TĂNG: {follow_da_tang}\n"
                 f"FOLLOW HIỆN TẠI: {follow_hien_tai}"
             )
             await message.reply_text(text)
@@ -156,17 +150,15 @@ async def start_handler(client, message):
         "Tôi hỗ trợ các lệnh sau:\n\n"
         "/fl1 username - Kiểm tra bằng API fam\n"
         "/fl2 username - Kiểm tra bằng API thường\n"
-        "/fl3 username số_lượng - Tăng follow ảo (chỉ bạn sử dụng)\n\n"
-        "Ví dụ: `/fl3 nvp31012007 500`"
+        "/fl3 username - Tăng follow ảo\n\n"
+        "Ví dụ: `/fl3 nvp31012007`"
     )
 
 # Tự động gọi lệnh /fl3 mỗi 15 phút
 async def auto_buff():
     while True:
-        # Tên người dùng và số lượng follow cần tăng
+        # Tên người dùng
         username = "nvp31012007"  # Thay username của bạn
-        follow_da_tang = 500  # Thay số lượng follow bạn muốn tăng
-
         # Gọi lệnh /fl3 tự động
         api_url = f"https://nvp310107.x10.mx/fltikfam.php?username={username}&key={API_KEY}"
         data = get_api_response(api_url)
@@ -189,7 +181,7 @@ async def auto_buff():
                         except:
                             follow_ban_dau = 0
 
-                follow_hien_tai = follow_ban_dau + follow_da_tang
+                follow_hien_tai = follow_ban_dau  # Không thêm 500 nữa
 
                 text = (
                     f"Tăng follow thành công cho: @{username}\n\n"
@@ -197,7 +189,6 @@ async def auto_buff():
                     f"UID: `{uid}`\n"
                     f"Nick Name: {nickname}\n\n"
                     f"FOLLOW BAN ĐẦU: {follow_ban_dau}\n"
-                    f"FOLLOW ĐÃ TĂNG: {follow_da_tang}\n"
                     f"FOLLOW HIỆN TẠI: {follow_hien_tai}"
                 )
                 # Gửi tin nhắn tự động đến admin hoặc nhóm cụ thể
