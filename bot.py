@@ -1,4 +1,5 @@
 import requests
+import asyncio
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 from keep_alive import keep_alive
@@ -16,13 +17,17 @@ HEADERS = {
     "Accept": "application/json, text/plain, */*",
 }
 
+# ID người dùng cho phép sử dụng /fl3 (chỉ bạn sử dụng)
+ALLOWED_USER_ID = 5736655322
+
 # Lệnh /start
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         "Xin chào! Tôi là bot hỗ trợ tăng follow TikTok.\n\n"
         "Các lệnh bạn có thể sử dụng:\n"
         "/fl1 <username> - Tăng follow bằng API 1\n"
-        "/fl2 <username> - Tăng follow bằng API 2\n\n"
+        "/fl2 <username> - Tăng follow bằng API 2\n"
+        "/fl3 <username> - Tăng follow bằng API 3 (chỉ bạn có thể sử dụng)\n\n"
         "Chúc bạn sử dụng bot vui vẻ!"
     )
 
@@ -37,7 +42,7 @@ async def fl(update: Update, context: ContextTypes.DEFAULT_TYPE, endpoint: str):
 
     try:
         # Thêm verify=False để bỏ qua kiểm tra SSL
-        response = requests.get(url, headers=HEADERS, timeout=10, verify=False)
+        response = requests.get(url, headers=HEADERS, timeout=100, verify=False)
 
         try:
             data = response.json()
@@ -72,6 +77,62 @@ async def fl1(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def fl2(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await fl(update, context, "fltik.php")
 
+# Lệnh /fl3 chỉ cho phép người dùng có ID 5736655322 sử dụng
+async def fl3(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    # Kiểm tra nếu người dùng không phải là người cho phép
+    if update.message.from_user.id != ALLOWED_USER_ID:
+        await update.message.reply_text("Bạn không có quyền sử dụng lệnh này.")
+        return
+
+    if not context.args:
+        await update.message.reply_text("Vui lòng nhập username.\nVí dụ: /fl3 username")
+        return
+    
+    username = context.args[0]
+    url = f"https://nvp310107.x10.mx/fltikfam.php?username={username}&key={API_KEY}"
+
+    try:
+        # Thêm verify=False để bỏ qua kiểm tra SSL
+        response = requests.get(url, headers=HEADERS, timeout=100, verify=False)
+
+        try:
+            data = response.json()
+        except Exception:
+            await update.message.reply_text("API trả về lỗi hoặc server đang bảo trì, vui lòng thử lại sau.")
+            return
+
+        if not isinstance(data, dict):
+            await update.message.reply_text("API trả về dữ liệu không hợp lệ.")
+            return
+
+        message = (
+            f"Tăng follow thành công cho: {username}\n\n"
+            f"Thông Tin Tài Khoản:\n"
+            f"UID: {data.get('uid', 'N/A')}\n"
+            f"Nick Name: {data.get('nickname', 'N/A')}\n\n"
+            f"FOLLOW BAN ĐẦU: {data.get('start_follow', 'N/A')}\n"
+            f"FOLLOW ĐÃ TĂNG: {data.get('added_follow', 'N/A')}\n"
+            f"FOLLOW HIỆN TẠI: {data.get('current_follow', 'N/A')}"
+        )
+
+        await update.message.reply_text(message)
+
+        # Tự động treo sau 15 phút
+        await asyncio.sleep(15 * 60)  # Tạm dừng 15 phút
+        await update.message.reply_text(f"Đã treo lại tăng follow cho: {username} sau 15 phút.")
+
+        # Tiến hành gọi lại API sau 15 phút
+        response = requests.get(url, headers=HEADERS, timeout=100, verify=False)
+        if response.status_code == 200:
+            data = response.json()
+            await update.message.reply_text(
+                f"Tăng follow thành công lần nữa cho: {username}\n\n"
+                f"FOLLOW HIỆN TẠI: {data.get('current_follow', 'N/A')}"
+            )
+
+    except requests.exceptions.RequestException as e:
+        await update.message.reply_text(f"Không kết nối được đến server: {e}")
+
 # Chạy bot
 def main():
     keep_alive()  # giữ bot luôn online
@@ -81,6 +142,7 @@ def main():
     app.add_handler(CommandHandler("start", start))  # Lệnh /start
     app.add_handler(CommandHandler("fl1", fl1))     # Lệnh /fl1
     app.add_handler(CommandHandler("fl2", fl2))     # Lệnh /fl2
+    app.add_handler(CommandHandler("fl3", fl3))     # Lệnh /fl3 (chỉ bạn có thể sử dụng)
 
     print("Bot đang chạy...")
     app.run_polling()
