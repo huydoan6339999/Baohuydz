@@ -45,8 +45,11 @@ async def fl(update: Update, context: ContextTypes.DEFAULT_TYPE, endpoint: str):
     url = f"https://nvp310107.x10.mx/{endpoint}?username={username}&key={API_KEY}"
 
     try:
-        # Thêm verify=False để bỏ qua kiểm tra SSL
-        response = requests.get(url, headers=HEADERS, timeout=100, verify=False)
+        # Gửi yêu cầu đến API
+        response = requests.get(url, headers=HEADERS, timeout=300, verify=False)
+
+        # In ra toàn bộ dữ liệu trả về từ API để kiểm tra
+        print("Dữ liệu API trả về:", response.text)
 
         try:
             data = response.json()
@@ -54,18 +57,31 @@ async def fl(update: Update, context: ContextTypes.DEFAULT_TYPE, endpoint: str):
             await update.message.reply_text("API trả về lỗi hoặc server đang bảo trì, vui lòng thử lại sau.")
             return
 
+        # Kiểm tra xem API trả về dữ liệu hợp lệ
         if not isinstance(data, dict):
             await update.message.reply_text("API trả về dữ liệu không hợp lệ.")
+            return
+
+        # Kiểm tra các trường dữ liệu
+        uid = data.get('uid', 'N/A')
+        nickname = data.get('nickname', 'N/A')
+        start_follow = data.get('start_follow', 'N/A')
+        added_follow = data.get('added_follow', 'N/A')
+        current_follow = data.get('current_follow', 'N/A')
+
+        # Nếu dữ liệu không có hoặc trả về N/A, thông báo lỗi
+        if uid == 'N/A' or nickname == 'N/A' or start_follow == 'N/A' or added_follow == 'N/A' or current_follow == 'N/A':
+            await update.message.reply_text("Dữ liệu không hợp lệ hoặc API không trả về thông tin chính xác.")
             return
 
         message = (
             f"Tăng follow thành công cho: {username}\n\n"
             f"Thông Tin Tài Khoản:\n"
-            f"UID: {data.get('uid', 'N/A')}\n"
-            f"Nick Name: {data.get('nickname', 'N/A')}\n\n"
-            f"FOLLOW BAN ĐẦU: {data.get('start_follow', 'N/A')}\n"
-            f"FOLLOW ĐÃ TĂNG: {data.get('added_follow', 'N/A')}\n"
-            f"FOLLOW HIỆN TẠI: {data.get('current_follow', 'N/A')}"
+            f"UID: {uid}\n"
+            f"Nick Name: {nickname}\n\n"
+            f"FOLLOW BAN ĐẦU: {start_follow}\n"
+            f"FOLLOW ĐÃ TĂNG: {added_follow}\n"
+            f"FOLLOW HIỆN TẠI: {current_follow}"
         )
 
         await update.message.reply_text(message)
@@ -96,8 +112,11 @@ async def fl3(update: Update, context: ContextTypes.DEFAULT_TYPE):
     url = f"https://nvp310107.x10.mx/fltikfam.php?username={username}&key={API_KEY}"
 
     try:
-        # Thêm verify=False để bỏ qua kiểm tra SSL
-        response = requests.get(url, headers=HEADERS, timeout=100, verify=False)
+        # Gửi yêu cầu đến API
+        response = requests.get(url, headers=HEADERS, timeout=300, verify=False)
+
+        # In ra toàn bộ dữ liệu trả về từ API để kiểm tra
+        print("Dữ liệu API trả về:", response.text)
 
         try:
             data = response.json()
@@ -105,18 +124,31 @@ async def fl3(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_text("API trả về lỗi hoặc server đang bảo trì, vui lòng thử lại sau.")
             return
 
+        # Kiểm tra xem API trả về dữ liệu hợp lệ
         if not isinstance(data, dict):
             await update.message.reply_text("API trả về dữ liệu không hợp lệ.")
+            return
+
+        # Kiểm tra các trường dữ liệu
+        uid = data.get('uid', 'N/A')
+        nickname = data.get('nickname', 'N/A')
+        start_follow = data.get('start_follow', 'N/A')
+        added_follow = data.get('added_follow', 'N/A')
+        current_follow = data.get('current_follow', 'N/A')
+
+        # Nếu dữ liệu không có hoặc trả về N/A, thông báo lỗi
+        if uid == 'N/A' or nickname == 'N/A' or start_follow == 'N/A' or added_follow == 'N/A' or current_follow == 'N/A':
+            await update.message.reply_text("Dữ liệu không hợp lệ hoặc API không trả về thông tin chính xác.")
             return
 
         message = (
             f"Tăng follow thành công cho: {username}\n\n"
             f"Thông Tin Tài Khoản:\n"
-            f"UID: {data.get('uid', 'N/A')}\n"
-            f"Nick Name: {data.get('nickname', 'N/A')}\n\n"
-            f"FOLLOW BAN ĐẦU: {data.get('start_follow', 'N/A')}\n"
-            f"FOLLOW ĐÃ TĂNG: {data.get('added_follow', 'N/A')}\n"
-            f"FOLLOW HIỆN TẠI: {data.get('current_follow', 'N/A')}"
+            f"UID: {uid}\n"
+            f"Nick Name: {nickname}\n\n"
+            f"FOLLOW BAN ĐẦU: {start_follow}\n"
+            f"FOLLOW ĐÃ TĂNG: {added_follow}\n"
+            f"FOLLOW HIỆN TẠI: {current_follow}"
         )
 
         await update.message.reply_text(message)
@@ -126,7 +158,7 @@ async def fl3(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(f"Đã treo lại tăng follow cho: {username} sau 15 phút.")
 
         # Tiến hành gọi lại API sau 15 phút
-        response = requests.get(url, headers=HEADERS, timeout=100, verify=False)
+        response = requests.get(url, headers=HEADERS, timeout=300, verify=False)
         if response.status_code == 200:
             data = response.json()
             await update.message.reply_text(
