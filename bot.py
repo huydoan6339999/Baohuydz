@@ -1,8 +1,8 @@
 from pyrogram import Client, filters
 import requests
-from keep_alive import keep_alive  # Thêm dòng này
+from keep_alive import keep_alive
 
-BOT_TOKEN = "6374595640:AAF7FI7joZJwNgyiRM-7l3FPHOdkf8Z5axo"
+BOT_TOKEN = "6374595640:AAFw8Lo4XMiz8JhDVhA8lYMk--wcFGmRBg4"
 
 app = Client("my_bot", bot_token=BOT_TOKEN)
 
@@ -59,6 +59,6 @@ async def start_handler(client, message):
     )
 
 if __name__ == "__main__":
-    keep_alive()  # Gọi keep_alive để giữ cho bot luôn online
+    keep_alive()
     print("Bot đang khởi động...")
     app.run()
