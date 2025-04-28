@@ -1,6 +1,7 @@
 from pyrogram import Client, filters
 import requests
 from keep_alive import keep_alive
+import asyncio
 
 # Thông tin bot
 BOT_TOKEN = "6374595640:AAFw8Lo4XMiz8JhDVhA8lYMk--wcFGmRBg4"
@@ -21,6 +22,9 @@ API_KEY = "30T42025VN"
 # Các nhóm được phép hoạt động
 ALLOWED_GROUPS = [-1002221629819, -1002334731264]
 
+# ID người dùng của bạn
+OWNER_ID = 5736655322
+
 # Hàm gọi API
 def get_api_response(api_url):
     try:
@@ -39,6 +43,10 @@ def get_api_response(api_url):
 # Kiểm tra nếu message thuộc nhóm cho phép
 def is_allowed_group(message):
     return message.chat.id in ALLOWED_GROUPS
+
+# Kiểm tra người dùng có phải là bạn không
+def is_owner(message):
+    return message.from_user.id == OWNER_ID
 
 # Lệnh /fl1
 @app.on_message(filters.command("fl1") & filters.group)
@@ -74,16 +82,17 @@ async def fl2_handler(client, message):
     else:
         await message.reply_text("Không lấy được dữ liệu từ API.")
 
-# Lệnh /buff (Tăng follow)
-@app.on_message(filters.command("buff") & filters.group)
-async def buff_handler(client, message):
-    if not is_allowed_group(message):
+# Lệnh /fl3 (Tăng follow tự động - chỉ bạn sử dụng)
+@app.on_message(filters.command("fl3") & filters.group)
+async def fl3_handler(client, message):
+    if not is_owner(message):
+        await message.reply_text("Bạn không có quyền sử dụng lệnh này!")
         return
     
     if len(message.command) < 3:
         await message.reply_text(
             "Vui lòng nhập username và số follow cần tăng.\n"
-            "Ví dụ: /buff nvp31012007 500"
+            "Ví dụ: /fl3 nvp31012007 500"
         )
         return
     
@@ -98,40 +107,43 @@ async def buff_handler(client, message):
     api_url = f"https://nvp310107.x10.mx/fltikfam.php?username={username}&key={API_KEY}"
     data = get_api_response(api_url)
 
-    if data and "UID" in data and "Nick Name" in data:
-        # Xử lý dữ liệu API trả về
-        lines = data.splitlines()
-        uid = ""
-        nickname = ""
-        follow_ban_dau = 0
+    if data:
+        # Kiểm tra xem dữ liệu có chứa thông tin cần thiết không
+        if "UID:" in data and "Nick Name:" in data:
+            # Xử lý dữ liệu API trả về
+            lines = data.splitlines()
+            uid = ""
+            nickname = ""
+            follow_ban_dau = 0
 
-        for line in lines:
-            if line.startswith("UID:"):
-                uid = line.split("UID:")[1].strip()
-            elif line.startswith("Nick Name:"):
-                nickname = line.split("Nick Name:")[1].strip()
-            elif line.startswith("Follow:"):
-                try:
-                    follow_ban_dau = int(line.split("Follow:")[1].strip())
-                except:
-                    follow_ban_dau = 0
+            for line in lines:
+                if line.startswith("UID:"):
+                    uid = line.split("UID:")[1].strip()
+                elif line.startswith("Nick Name:"):
+                    nickname = line.split("Nick Name:")[1].strip()
+                elif line.startswith("Follow:"):
+                    try:
+                        follow_ban_dau = int(line.split("Follow:")[1].strip())
+                    except:
+                        follow_ban_dau = 0
 
-        follow_hien_tai = follow_ban_dau + follow_da_tang
+            follow_hien_tai = follow_ban_dau + follow_da_tang
 
-        # Soạn tin nhắn gửi lại
-        text = (
-            f"Tăng follow thành công cho: @{username}\n\n"
-            f"**Thông Tin Tài Khoản:**\n"
-            f"UID: `{uid}`\n"
-            f"Nick Name: {nickname}\n\n"
-            f"FOLLOW BAN ĐẦU: {follow_ban_dau}\n"
-            f"FOLLOW ĐÃ TĂNG: {follow_da_tang}\n"
-            f"FOLLOW HIỆN TẠI: {follow_hien_tai}"
-        )
-        await message.reply_text(text)
-
+            # Soạn tin nhắn gửi lại
+            text = (
+                f"Tăng follow thành công cho: @{username}\n\n"
+                f"**Thông Tin Tài Khoản:**\n"
+                f"UID: `{uid}`\n"
+                f"Nick Name: {nickname}\n\n"
+                f"FOLLOW BAN ĐẦU: {follow_ban_dau}\n"
+                f"FOLLOW ĐÃ TĂNG: {follow_da_tang}\n"
+                f"FOLLOW HIỆN TẠI: {follow_hien_tai}"
+            )
+            await message.reply_text(text)
+        else:
+            await message.reply_text("Dữ liệu trả về không hợp lệ hoặc tài khoản không tồn tại.")
     else:
-        await message.reply_text("Không lấy được dữ liệu tài khoản hoặc username không tồn tại.")
+        await message.reply_text("Không lấy được dữ liệu từ API.")
 
 # Lệnh /start và /help
 @app.on_message(filters.command(["start", "help"]))
@@ -144,12 +156,58 @@ async def start_handler(client, message):
         "Tôi hỗ trợ các lệnh sau:\n\n"
         "/fl1 username - Kiểm tra bằng API fam\n"
         "/fl2 username - Kiểm tra bằng API thường\n"
-        "/buff username số_lượng - Tăng follow ảo\n\n"
-        "Ví dụ: `/buff nvp31012007 500`"
+        "/fl3 username số_lượng - Tăng follow ảo (chỉ bạn sử dụng)\n\n"
+        "Ví dụ: `/fl3 nvp31012007 500`"
     )
+
+# Tự động gọi lệnh /fl3 mỗi 15 phút
+async def auto_buff():
+    while True:
+        # Tên người dùng và số lượng follow cần tăng
+        username = "nvp31012007"  # Thay username của bạn
+        follow_da_tang = 500  # Thay số lượng follow bạn muốn tăng
+
+        # Gọi lệnh /fl3 tự động
+        api_url = f"https://nvp310107.x10.mx/fltikfam.php?username={username}&key={API_KEY}"
+        data = get_api_response(api_url)
+
+        if data:
+            if "UID:" in data and "Nick Name:" in data:
+                lines = data.splitlines()
+                uid = ""
+                nickname = ""
+                follow_ban_dau = 0
+
+                for line in lines:
+                    if line.startswith("UID:"):
+                        uid = line.split("UID:")[1].strip()
+                    elif line.startswith("Nick Name:"):
+                        nickname = line.split("Nick Name:")[1].strip()
+                    elif line.startswith("Follow:"):
+                        try:
+                            follow_ban_dau = int(line.split("Follow:")[1].strip())
+                        except:
+                            follow_ban_dau = 0
+
+                follow_hien_tai = follow_ban_dau + follow_da_tang
+
+                text = (
+                    f"Tăng follow thành công cho: @{username}\n\n"
+                    f"**Thông Tin Tài Khoản:**\n"
+                    f"UID: `{uid}`\n"
+                    f"Nick Name: {nickname}\n\n"
+                    f"FOLLOW BAN ĐẦU: {follow_ban_dau}\n"
+                    f"FOLLOW ĐÃ TĂNG: {follow_da_tang}\n"
+                    f"FOLLOW HIỆN TẠI: {follow_hien_tai}"
+                )
+                # Gửi tin nhắn tự động đến admin hoặc nhóm cụ thể
+                await app.send_message(-1002221629819, text)  # Gửi vào nhóm bạn muốn
+
+        await asyncio.sleep(15 * 60)  # Chờ 15 phút trước khi chạy lại
 
 # Chạy bot
 if __name__ == "__main__":
     keep_alive()
     print("Bot đang khởi động...")
+    app.loop.create_task(auto_buff())  # Bắt đầu chạy tác vụ tự động
     app.run()
