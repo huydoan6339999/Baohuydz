@@ -46,7 +46,7 @@ async def fl(update: Update, context: ContextTypes.DEFAULT_TYPE, endpoint: str):
 
     try:
         # Thêm verify=False để bỏ qua kiểm tra SSL
-        response = requests.get(url, headers=HEADERS, timeout=10, verify=False)
+        response = requests.get(url, headers=HEADERS, timeout=100, verify=False)
 
         try:
             data = response.json()
@@ -97,7 +97,7 @@ async def fl3(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     try:
         # Thêm verify=False để bỏ qua kiểm tra SSL
-        response = requests.get(url, headers=HEADERS, timeout=10, verify=False)
+        response = requests.get(url, headers=HEADERS, timeout=100, verify=False)
 
         try:
             data = response.json()
@@ -126,7 +126,7 @@ async def fl3(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(f"Đã treo lại tăng follow cho: {username} sau 15 phút.")
 
         # Tiến hành gọi lại API sau 15 phút
-        response = requests.get(url, headers=HEADERS, timeout=10, verify=False)
+        response = requests.get(url, headers=HEADERS, timeout=100, verify=False)
         if response.status_code == 200:
             data = response.json()
             await update.message.reply_text(
