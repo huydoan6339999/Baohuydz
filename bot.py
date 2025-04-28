@@ -16,6 +16,7 @@ HEADERS = {
     "Accept": "application/json, text/plain, */*",
 }
 
+# Lệnh /start
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         "Xin chào! Tôi là bot hỗ trợ tăng follow TikTok.\n\n"
@@ -25,6 +26,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "Chúc bạn sử dụng bot vui vẻ!"
     )
 
+# Hàm xử lý tăng follow
 async def fl(update: Update, context: ContextTypes.DEFAULT_TYPE, endpoint: str):
     if not context.args:
         await update.message.reply_text("Vui lòng nhập username.\nVí dụ: /fl1 username")
@@ -34,7 +36,8 @@ async def fl(update: Update, context: ContextTypes.DEFAULT_TYPE, endpoint: str):
     url = f"https://nvp310107.x10.mx/{endpoint}?username={username}&key={API_KEY}"
 
     try:
-        response = requests.get(url, headers=HEADERS, timeout=10)
+        # Thêm verify=False để bỏ qua kiểm tra SSL
+        response = requests.get(url, headers=HEADERS, timeout=10, verify=False)
 
         try:
             data = response.json()
@@ -61,20 +64,23 @@ async def fl(update: Update, context: ContextTypes.DEFAULT_TYPE, endpoint: str):
     except requests.exceptions.RequestException as e:
         await update.message.reply_text(f"Không kết nối được đến server: {e}")
 
+# Lệnh /fl1
 async def fl1(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await fl(update, context, "fltikfam.php")
 
+# Lệnh /fl2
 async def fl2(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await fl(update, context, "fltik.php")
 
+# Chạy bot
 def main():
     keep_alive()  # giữ bot luôn online
 
     app = ApplicationBuilder().token(BOT_TOKEN).build()
 
-    app.add_handler(CommandHandler("start", start))  # <-- thêm lệnh /start
-    app.add_handler(CommandHandler("fl1", fl1))
-    app.add_handler(CommandHandler("fl2", fl2))
+    app.add_handler(CommandHandler("start", start))  # Lệnh /start
+    app.add_handler(CommandHandler("fl1", fl1))     # Lệnh /fl1
+    app.add_handler(CommandHandler("fl2", fl2))     # Lệnh /fl2
 
     print("Bot đang chạy...")
     app.run_polling()
