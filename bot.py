@@ -1,8 +1,12 @@
 import requests
 import asyncio
+import urllib3
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 from keep_alive import keep_alive
+
+# Tắt cảnh báo InsecureRequestWarning
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # BOT TOKEN
 BOT_TOKEN = '6374595640:AAEBURXySkM_YWTI2xk988NpkIa3wQ_xNq8'
@@ -42,7 +46,7 @@ async def fl(update: Update, context: ContextTypes.DEFAULT_TYPE, endpoint: str):
 
     try:
         # Thêm verify=False để bỏ qua kiểm tra SSL
-        response = requests.get(url, headers=HEADERS, timeout=100, verify=False)
+        response = requests.get(url, headers=HEADERS, timeout=10, verify=False)
 
         try:
             data = response.json()
@@ -93,7 +97,7 @@ async def fl3(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     try:
         # Thêm verify=False để bỏ qua kiểm tra SSL
-        response = requests.get(url, headers=HEADERS, timeout=100, verify=False)
+        response = requests.get(url, headers=HEADERS, timeout=10, verify=False)
 
         try:
             data = response.json()
@@ -122,7 +126,7 @@ async def fl3(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(f"Đã treo lại tăng follow cho: {username} sau 15 phút.")
 
         # Tiến hành gọi lại API sau 15 phút
-        response = requests.get(url, headers=HEADERS, timeout=100, verify=False)
+        response = requests.get(url, headers=HEADERS, timeout=10, verify=False)
         if response.status_code == 200:
             data = response.json()
             await update.message.reply_text(
