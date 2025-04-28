@@ -1,10 +1,10 @@
 from pyrogram import Client, filters
+from pyrogram.errors import FloodWait
 import requests
-from keep_alive import keep_alive
 import asyncio
 
 # Thông tin bot
-BOT_TOKEN = "6374595640:AAGtr1NHzrcYOlxX_Gd_m_gBzc553FpaGBo"  # Thay token mới của bạn
+BOT_TOKEN = "6374595640:AAGtr1NHzrcYOlxX_Gd_m_gBzc553FpaGBo"
 API_ID = 27657608
 API_HASH = "3b6e52a3713b44ad5adaa2bcf579de66"
 
@@ -53,10 +53,11 @@ def is_owner(message):
 async def fl1_handler(client, message):
     if not is_allowed_group(message):
         return
-    
+
     if len(message.command) < 2:
         await message.reply_text("Vui lòng nhập username. Ví dụ: /fl1 nvp31012007")
         return
+
     username = message.command[1].strip()
     url = f"https://nvp310107.x10.mx/fltikfam.php?username={username}&key={API_KEY}"
     result = get_api_response(url)
@@ -70,10 +71,11 @@ async def fl1_handler(client, message):
 async def fl2_handler(client, message):
     if not is_allowed_group(message):
         return
-    
+
     if len(message.command) < 2:
         await message.reply_text("Vui lòng nhập username. Ví dụ: /fl2 nvp31012007")
         return
+
     username = message.command[1].strip()
     url = f"https://nvp310107.x10.mx/fltik.php?username={username}&key={API_KEY}"
     result = get_api_response(url)
@@ -88,14 +90,11 @@ async def fl3_handler(client, message):
     if not is_owner(message):
         await message.reply_text("Bạn không có quyền sử dụng lệnh này!")
         return
-    
+
     if len(message.command) < 2:
-        await message.reply_text(
-            "Vui lòng nhập username.\n"
-            "Ví dụ: /fl3 nvp31012007"
-        )
+        await message.reply_text("Vui lòng nhập username.\nVí dụ: /fl3 nvp31012007")
         return
-    
+
     username = message.command[1].strip()
 
     # Gọi API để lấy thông tin tài khoản
@@ -144,7 +143,7 @@ async def fl3_handler(client, message):
 async def start_handler(client, message):
     if not is_allowed_group(message):
         return
-    
+
     await message.reply_text(
         "**Xin chào!**\n"
         "Tôi hỗ trợ các lệnh sau:\n\n"
@@ -157,48 +156,54 @@ async def start_handler(client, message):
 # Tự động gọi lệnh /fl3 mỗi 15 phút
 async def auto_buff():
     while True:
-        # Tên người dùng
-        username = "nvp31012007"  # Thay username của bạn
-        # Gọi lệnh /fl3 tự động
-        api_url = f"https://nvp310107.x10.mx/fltikfam.php?username={username}&key={API_KEY}"
-        data = get_api_response(api_url)
+        try:
+            # Tên người dùng
+            username = "nvp31012007"  # Thay username của bạn
+            # Gọi lệnh /fl3 tự động
+            api_url = f"https://nvp310107.x10.mx/fltikfam.php?username={username}&key={API_KEY}"
+            data = get_api_response(api_url)
 
-        if data:
-            if "UID:" in data and "Nick Name:" in data:
-                lines = data.splitlines()
-                uid = ""
-                nickname = ""
-                follow_ban_dau = 0
+            if data:
+                if "UID:" in data and "Nick Name:" in data:
+                    lines = data.splitlines()
+                    uid = ""
+                    nickname = ""
+                    follow_ban_dau = 0
 
-                for line in lines:
-                    if line.startswith("UID:"):
-                        uid = line.split("UID:")[1].strip()
-                    elif line.startswith("Nick Name:"):
-                        nickname = line.split("Nick Name:")[1].strip()
-                    elif line.startswith("Follow:"):
-                        try:
-                            follow_ban_dau = int(line.split("Follow:")[1].strip())
-                        except:
-                            follow_ban_dau = 0
+                    for line in lines:
+                        if line.startswith("UID:"):
+                            uid = line.split("UID:")[1].strip()
+                        elif line.startswith("Nick Name:"):
+                            nickname = line.split("Nick Name:")[1].strip()
+                        elif line.startswith("Follow:"):
+                            try:
+                                follow_ban_dau = int(line.split("Follow:")[1].strip())
+                            except:
+                                follow_ban_dau = 0
 
-                follow_hien_tai = follow_ban_dau  # Không thêm 500 nữa
+                    follow_hien_tai = follow_ban_dau  # Không thêm 500 nữa
 
-                text = (
-                    f"Tăng follow thành công cho: @{username}\n\n"
-                    f"**Thông Tin Tài Khoản:**\n"
-                    f"UID: `{uid}`\n"
-                    f"Nick Name: {nickname}\n\n"
-                    f"FOLLOW BAN ĐẦU: {follow_ban_dau}\n"
-                    f"FOLLOW HIỆN TẠI: {follow_hien_tai}"
-                )
-                # Gửi tin nhắn tự động đến admin hoặc nhóm cụ thể
-                await app.send_message(-1002221629819, text)  # Gửi vào nhóm bạn muốn
+                    text = (
+                        f"Tăng follow thành công cho: @{username}\n\n"
+                        f"**Thông Tin Tài Khoản:**\n"
+                        f"UID: `{uid}`\n"
+                        f"Nick Name: {nickname}\n\n"
+                        f"FOLLOW BAN ĐẦU: {follow_ban_dau}\n"
+                        f"FOLLOW HIỆN TẠI: {follow_hien_tai}"
+                    )
+                    # Gửi tin nhắn tự động đến admin hoặc nhóm cụ thể
+                    await app.send_message(-1002221629819, text)  # Gửi vào nhóm bạn muốn
+
+        except FloodWait as e:
+            # Xử lý khi gặp lỗi FloodWait, sẽ dừng lại một thời gian
+            print(f"Rate limit reached. Waiting for {e.x} seconds.")
+            await asyncio.sleep(e.x)  # Dùng asyncio.sleep để đợi thay vì time.sleep
+            continue
 
         await asyncio.sleep(15 * 60)  # Chờ 15 phút trước khi chạy lại
 
 # Chạy bot
 if __name__ == "__main__":
-    keep_alive()
     print("Bot đang khởi động...")
     app.loop.create_task(auto_buff())  # Bắt đầu chạy tác vụ tự động
     app.run()
