@@ -1,115 +1,83 @@
-from pyrogram import Client, filters
 import requests
-import asyncio
-from keep_alive import keep_alive  # Import keep_alive.py
+from telegram import Update
+from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
+from keep_alive import keep_alive
 
-# Thông tin bot
-BOT_TOKEN = "6374595640:AAEBURXySkM_YWTI2xk988NpkIa3wQ_xNq8"
-API_ID = 27657608
-API_HASH = "3b6e52a3713b44ad5adaa2bcf579de66"
+# BOT TOKEN
+BOT_TOKEN = '6374595640:AAEBURXySkM_YWTI2xk988NpkIa3wQ_xNq8'
 
-# Khởi tạo bot
-app = Client(
-    "my_bot",
-    bot_token=BOT_TOKEN,
-    api_id=API_ID,
-    api_hash=API_HASH
-)
+# API Key
+API_KEY = '30T42025VN'
 
-# API Key để gọi web
-API_KEY = "30T42025VN"
+HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                  "AppleWebKit/537.36 (KHTML, like Gecko) "
+                  "Chrome/122.0.0.0 Safari/537.36",
+    "Accept": "application/json, text/plain, */*",
+}
 
-# Các nhóm được phép hoạt động
-ALLOWED_GROUPS = [-1002221629819, -1002334731264]
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text(
+        "Xin chào! Tôi là bot hỗ trợ tăng follow TikTok.\n\n"
+        "Các lệnh bạn có thể sử dụng:\n"
+        "/fl1 <username> - Tăng follow bằng API 1\n"
+        "/fl2 <username> - Tăng follow bằng API 2\n\n"
+        "Chúc bạn sử dụng bot vui vẻ!"
+    )
 
-# ID người dùng của bạn
-OWNER_ID = 5736655322
-
-# Hàm gọi API
-def get_api_response(api_url):
-    try:
-        headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
-        }
-        # Tắt xác minh SSL
-        response = requests.get(api_url, headers=headers, timeout=30, verify=False)
-        if response.status_code == 200 and response.text.strip():
-            return response.text.strip()
-        else:
-            return None
-    except Exception as e:
-        print(f"Lỗi khi gọi API: {e}")
-        return None
-
-# Kiểm tra nếu message thuộc nhóm cho phép
-def is_allowed_group(message):
-    return message.chat.id in ALLOWED_GROUPS
-
-# Kiểm tra người dùng có phải là bạn không
-def is_owner(message):
-    return message.from_user.id == OWNER_ID
-
-# Lệnh /fl1
-@app.on_message(filters.command("fl1") & filters.group)
-async def fl1_handler(client, message):
-    if not is_allowed_group(message):
+async def fl(update: Update, context: ContextTypes.DEFAULT_TYPE, endpoint: str):
+    if not context.args:
+        await update.message.reply_text("Vui lòng nhập username.\nVí dụ: /fl1 username")
         return
     
-    if len(message.command) < 2:
-        await message.reply_text("Vui lòng nhập username. Ví dụ: /fl1 nvp31012007")
-        return
-    username = message.command[1].strip()
-    url = f"https://nvp310107.x10.mx/fltikfam.php?username={username}&key={API_KEY}"
-    result = get_api_response(url)
-    if result:
-        await message.reply_text(result)
-    else:
-        await message.reply_text("Không lấy được dữ liệu từ API.")
+    username = context.args[0]
+    url = f"https://nvp310107.x10.mx/{endpoint}?username={username}&key={API_KEY}"
 
-# Các lệnh khác như /fl2, /fl3 và /start vẫn giữ nguyên
+    try:
+        response = requests.get(url, headers=HEADERS, timeout=10)
 
-# Tự động gọi lệnh /fl3 mỗi 15 phút
-async def auto_buff():
-    while True:
-        username = "nvp31012007"  # Thay username của bạn
-        api_url = f"https://nvp310107.x10.mx/fltikfam.php?username={username}&key={API_KEY}"
-        data = get_api_response(api_url)
+        try:
+            data = response.json()
+        except Exception:
+            await update.message.reply_text("API trả về lỗi hoặc server đang bảo trì, vui lòng thử lại sau.")
+            return
 
-        if data:
-            if "UID:" in data and "Nick Name:" in data:
-                lines = data.splitlines()
-                uid = ""
-                nickname = ""
-                follow_ban_dau = 0
+        if not isinstance(data, dict):
+            await update.message.reply_text("API trả về dữ liệu không hợp lệ.")
+            return
 
-                for line in lines:
-                    if line.startswith("UID:"):
-                        uid = line.split("UID:")[1].strip()
-                    elif line.startswith("Nick Name:"):
-                        nickname = line.split("Nick Name:")[1].strip()
-                    elif line.startswith("Follow:"):
-                        try:
-                            follow_ban_dau = int(line.split("Follow:")[1].strip())
-                        except:
-                            follow_ban_dau = 0
+        message = (
+            f"Tăng follow thành công cho: {username}\n\n"
+            f"Thông Tin Tài Khoản:\n"
+            f"UID: {data.get('uid', 'N/A')}\n"
+            f"Nick Name: {data.get('nickname', 'N/A')}\n\n"
+            f"FOLLOW BAN ĐẦU: {data.get('start_follow', 'N/A')}\n"
+            f"FOLLOW ĐÃ TĂNG: {data.get('added_follow', 'N/A')}\n"
+            f"FOLLOW HIỆN TẠI: {data.get('current_follow', 'N/A')}"
+        )
 
-                follow_hien_tai = follow_ban_dau  # Không thêm 500 nữa
+        await update.message.reply_text(message)
 
-                text = (
-                    f"Tăng follow thành công cho: @{username}\n\n"
-                    f"**Thông Tin Tài Khoản:**\n"
-                    f"UID: `{uid}`\n"
-                    f"Nick Name: {nickname}\n\n"
-                    f"FOLLOW BAN ĐẦU: {follow_ban_dau}\n"
-                    f"FOLLOW HIỆN TẠI: {follow_hien_tai}"
-                )
-                await app.send_message(-1002221629819, text)
+    except requests.exceptions.RequestException as e:
+        await update.message.reply_text(f"Không kết nối được đến server: {e}")
 
-        await asyncio.sleep(15 * 60)  # Chờ 15 phút trước khi chạy lại
+async def fl1(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await fl(update, context, "fltikfam.php")
 
-# Chạy bot và keep_alive
+async def fl2(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await fl(update, context, "fltik.php")
+
+def main():
+    keep_alive()  # giữ bot luôn online
+
+    app = ApplicationBuilder().token(BOT_TOKEN).build()
+
+    app.add_handler(CommandHandler("start", start))  # <-- thêm lệnh /start
+    app.add_handler(CommandHandler("fl1", fl1))
+    app.add_handler(CommandHandler("fl2", fl2))
+
+    print("Bot đang chạy...")
+    app.run_polling()
+
 if __name__ == "__main__":
-    keep_alive()  # Gọi hàm giữ bot luôn hoạt động
-    print("Bot đang khởi động...")
-    app.loop.create_task(auto_buff())  # Bắt đầu chạy tác vụ tự động
-    app.run()
+    main()
