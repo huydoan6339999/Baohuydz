@@ -4,7 +4,7 @@ from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 from keep_alive import keep_alive
 
-BOT_TOKEN = '6374595640:AAHZm45pZN6QFx2UAdj4CcfA1KZ2ZC09Y7c'
+BOT_TOKEN = '6374595640:AAEdnPCVW05rcVjuHkx7RmjO_kRk2QbuCS4'
 ALLOWED_GROUP_ID = -1002221629819
 ALLOWED_USER_IDS = [5736655322]
 API_URL = 'https://api.thanhtien.site/lynk/dino/telefl.php'
@@ -68,6 +68,7 @@ async def buff2(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 )
                 await update.message.reply_text(reply_text)
             except:
+                # Không hiện lỗi chi tiết
                 pass
             await asyncio.sleep(900)
 
