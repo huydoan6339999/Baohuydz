@@ -5,8 +5,10 @@ from telegram import Update, InputFile
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, ContextTypes, filters
 import os
 from keep_alive import keep_alive
+import requests
 
 rank_filter = {'ranks': []}
+proxies = []
 
 # ================= RANDOM TÊN NGƯỜI VIỆT =================
 def random_name():
@@ -39,44 +41,64 @@ def random_register_date():
 def random_level():
     return 30
 
-
 def random_quan_huy():
     return random.randint(0, 100)
-
 
 def random_tuong():
     return random.randint(30, 120)
 
-
 def random_skin():
     return random.randint(50, 500)
-
 
 def random_SS():
     return random.randint(0, 5)
 
-
 def random_SSS():
     return random.randint(0, 3)
 
-
 def random_account_status():
     return 'Acc Full'
-
 
 def random_rank():
     ranks = ['K.Cương V', 'K.Cương IV', 'T.Anh V', 'Cao Thủ', 'Đại Cao Thủ', 'B.Kim I']
     return random.choice(ranks)
 
+def random_username():
+    return 'user' + str(random.randint(10000, 99999))
+
+def random_password():
+    chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+    return ''.join(random.choices(chars, k=10))
+
+# ================= CHECK GARENA =================
+def check_garena_account(username, password, proxy=None):
+    url = "https://account.garena.com/api/login"
+    proxies_dict = None
+    if proxy:
+        proxies_dict = {
+            "http": f"http://{proxy}",
+            "https": f"http://{proxy}"
+        }
+
+    try:
+        response = requests.post(url, data={
+            "account": username,
+            "password": password
+        }, proxies=proxies_dict, timeout=10)
+
+        if response.status_code == 200 and 'uid' in response.text:
+            return True  # Acc live
+        else:
+            return False  # Acc die
+    except Exception as e:
+        print(f"Lỗi proxy hoặc request: {e}")
+        return False
 
 # ================= TẠO ACC THEO MẪU =================
 def generate_account_status(account_line):
     try:
-        if ':' in account_line:
-            user, password = account_line.split(':', 1)
-        else:
-            user = account_line
-            password = 'Không có mật khẩu'
+        user = random_username()
+        password = random_password()
 
         account_info = (
             f'{user}:{password} | '
@@ -94,6 +116,9 @@ def generate_account_status(account_line):
     except Exception as e:
         return f'Lỗi xử lý: {account_line}'
 
+# ================= DELAY AUTO =================
+async def delay():
+    await asyncio.sleep(random.uniform(1.0, 2.0))
 
 # ================= LỌC FILE =================
 async def check_file(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -146,7 +171,6 @@ async def check_file(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except Exception as e:
         await update.message.reply_text(f"Lỗi xử lý file: {e}")
 
-
 # ================= SET RANK =================
 async def set_rank_filter(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not context.args:
@@ -176,6 +200,33 @@ async def set_rank_filter(update: Update, context: ContextTypes.DEFAULT_TYPE):
     rank_filter['ranks'] = combined_ranks
     await update.message.reply_text(f"Đã chọn lọc acc theo rank: {', '.join(combined_ranks)}\nBây giờ bạn có thể gửi file để bot lọc.")
 
+# ================= ADD PROXY =================
+async def add_proxy(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not context.args:
+        await update.message.reply_text("Vui lòng nhập proxy theo dạng ip:port hoặc user:pass@ip:port.")
+        return
+
+    proxy = context.args[0]
+    proxies.append(proxy)
+    await update.message.reply_text(f"Đã thêm proxy: {proxy}\nTổng số proxy hiện tại: {len(proxies)}")
+
+# ================= CHECK GARENA LIVE =================
+async def random_and_check(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    accounts = read_accounts_from_file()
+    account = random.choice(accounts)
+    if ':' in account:
+        username, password = account.split(':', 1)
+    else:
+        await update.message.reply_text("Tài khoản không đúng định dạng user:pass.")
+        return
+
+    proxy = random.choice(proxies) if proxies else None
+    is_live = check_garena_account(username, password, proxy)
+
+    status = "✅ LIVE" if is_live else "❌ DIE"
+    await update.message.reply_text(f"{account} → {status}")
+
+    await delay()
 
 # ================= BOT TELEGRAM =================
 BOT_TOKEN = '6374595640:AAEdnPCVW05rcVjuHkx7RmjO_kRk2QbuCS4'
@@ -186,17 +237,17 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "/random - Random 1 tài khoản.\n"
         "/all - Gửi tất cả tài khoản.\n"
         "/allfile - Gửi file TXT chứa toàn bộ tài khoản.\n"
-        "/filter rank1 rank2 ... - Chọn rank cần lọc.\n\n"
+        "/filter rank1 rank2 ... - Chọn rank cần lọc.\n"
+        "/addproxy proxy - Thêm proxy để sử dụng (không bắt buộc).\n"
+        "/check - Random acc và kiểm tra live/die Garena.\n\n"
         "📂 Bạn cũng có thể gửi file .txt để lọc tự động."
     )
-
 
 async def random_account(update: Update, context: ContextTypes.DEFAULT_TYPE):
     accounts = read_accounts_from_file()
     account = random.choice(accounts)
     account_info = generate_account_status(account)
     await update.message.reply_text(account_info)
-
 
 async def all_accounts(update: Update, context: ContextTypes.DEFAULT_TYPE):
     accounts = read_accounts_from_file()
@@ -206,7 +257,6 @@ async def all_accounts(update: Update, context: ContextTypes.DEFAULT_TYPE):
         account_info = generate_account_status(account)
         await update.message.reply_text(account_info)
         await asyncio.sleep(0.5)
-
 
 async def all_accounts_file(update: Update, context: ContextTypes.DEFAULT_TYPE):
     accounts = read_accounts_from_file()
@@ -222,7 +272,7 @@ async def all_accounts_file(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await update.message.reply_document(InputFile('acc_list.txt'))
 
-
+# ================= READ ACCOUNTS =================
 def read_accounts_from_file():
     accounts = []
     try:
@@ -242,7 +292,7 @@ def read_accounts_from_file():
         accounts = [f'user{i + 1}@example.com:password{i + 1}' for i in range(5)]
         return accounts
 
-
+# ================= RUN BOT =================
 def run_bot():
     app = ApplicationBuilder().token(BOT_TOKEN).build()
 
@@ -251,11 +301,12 @@ def run_bot():
     app.add_handler(CommandHandler('all', all_accounts))
     app.add_handler(CommandHandler('allfile', all_accounts_file))
     app.add_handler(CommandHandler('filter', set_rank_filter))
+    app.add_handler(CommandHandler('addproxy', add_proxy))
+    app.add_handler(CommandHandler('check', random_and_check))
     app.add_handler(MessageHandler(filters.Document.ALL, check_file))
 
     print("Bot đang chạy...")
     app.run_polling()
-
 
 if __name__ == '__main__':
     keep_alive()
